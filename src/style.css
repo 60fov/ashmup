@@ -13,13 +13,82 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-body {
+* {
   margin: 0;
+  padding: 0;
+}
+
+body {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100dvw;
   height: 100dvh;
+}
+
+#info-panel {
+  &.hidden {
+    display: none;
+  }
+  font-family: monospace;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  margin: 1em;
+  background: hsl(0 0% 20%);
+  border: 0.5px solid hsl(0 0% 25%);
+  color: white;
+  padding: 1em;
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+
+  .info-group {
+    h3 {
+      font-size: 0.75em;
+      font-weight: normal;
+      color: hsl(0 0% 50%);
+      margin-bottom: 4px;
+    }
+  }
+
+  ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+    --padding: 0.25em;
+    li {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      line-height: 1;
+      /* border-radius: 2px; */
+      /* color: hsl(0 0% 10%); */
+    }
+  }
+
+  .key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 1em;
+    min-width: 1em;
+    border: 0.5px solid hsl(0 0% 75%);
+    padding: var(--padding);
+  }
+
+  .divider {
+    height: 0.5px;
+    background: hsl(0 0% 75%);
+    flex: 1;
+  }
+
+  .action {
+    border: 0.5px solid hsl(0 0% 75%);
+    padding: var(--padding);
+  }
+
 }
 
 @media (prefers-color-scheme: light) {

@@ -16,6 +16,7 @@ window.addEventListener("pointerdown", (event) => input.pointerDownHandler(event
 window.addEventListener("pointerup", (event) => input.pointerUpHandler(event));
 window.addEventListener("pointermove", (event) => input.pointerMoveHandler(event));
 
+export const info_panel = document.querySelector("#info-panel");
 export const canvas = document.createElement("canvas");
 document.body.appendChild(canvas);
 sizeGame(800, 600);
@@ -80,6 +81,10 @@ function loop(time: DOMHighResTimeStamp) {
   imlog.clear();
   imlog.text(`${(dt_ms).toFixed(0)}ms`);
   imlog.text(`${(time_elapsed/1000).toFixed(1)}s`);
+
+  if (input.keyJustUp("KeyC")) {
+    info_panel?.classList.toggle("hidden");
+  }
 
   { // update
     world.time += dt_s;
