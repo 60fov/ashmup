@@ -24,11 +24,23 @@ sizeGame(800, 600);
 let raf = requestAnimationFrame(loop);
 raf;
 
+
 let imlog = {
   visible: import.meta.env.DEV,
-  list: [] as string[],
-  text(str: string) {
-    this.list.push(str);
+  list: [] as ({
+    kind: "text",
+    text: string,
+  } | {
+    kind: "vec2",
+    vec: Vec2,
+    size?: number,
+    label?: string,
+  })[],
+  text(text: string) {
+    this.list.push({kind:"text",text});
+  },
+  vec2(vec: Vec2, size?: number, label?: string) {
+    this.list.push({kind:"vec2",vec:Vec2.copy(vec), size, label});
   },
   clear() {
     this.list = [];
@@ -99,13 +111,13 @@ function loop(time: DOMHighResTimeStamp) {
       if (input.keyDown("KeyF")) input_dir.x += 1;
       input_dir.normalize();
 
-      const is_moving = input_dir.len2() != 0;
-      const is_boosting = input.keyDown(player.boost.key);
+      const input_move = input_dir.len2() != 0;
+      const input_boost = input.keyDown(player.boost.key);
       const has_boost = player.boost.amount > 0;
 
-      if (is_moving) player.last_input_time = world.time;
+      if (input_move) player.last_input_time = world.time;
 
-      if (is_boosting && has_boost) {
+      if (input_boost && has_boost) {
         player.boost.last_boost_time = world.time;
         player.boost.amount -= 100 * dt_s;
         player.boost.speed += player.boost.max_speed * player.boost.accel;
@@ -119,13 +131,14 @@ function loop(time: DOMHighResTimeStamp) {
       player.boost.amount = clamp(player.boost.amount, 0, player.boost.max_amount);
       player.boost.speed = clamp(player.boost.speed, 0, player.boost.max_speed);
 
-      let dir = player.vel.normalize();
+      let dir = player.vel.len2() > 1 ? player.vel.normalize() : player.vel;
       let new_dir = new Vec2(0);
 
-      if (is_moving) {
+      if (input_move) {
         let min_unit_dist = 0.1;
-        if (Vec2.sub(dir, input_dir).len() > min_unit_dist) {
-          new_dir = Vec2.lerp(dir, input_dir, 0.5);
+        let dist = Vec2.sub(dir, input_dir).len();
+        if (dist > min_unit_dist) {
+          new_dir = Vec2.lerp(dir, input_dir, 0.4);
         } else {
           new_dir = input_dir;
         }
@@ -147,8 +160,9 @@ function loop(time: DOMHighResTimeStamp) {
       player.pos.y += dxy.y;
 
       imlog.text("player:");
+      imlog.vec2(input_dir, undefined, "input");
+      imlog.vec2(player.vel, undefined, "vel");
       imlog.text(`\tpos: ${player.pos.x.toFixed(0)}, ${player.pos.y.toFixed(0)}`);
-      imlog.text(`\tvel: ${player.vel.x.toFixed(0)}, ${player.vel.y.toFixed(0)}`);
       imlog.text(`\tboost: ${player.boost.amount.toFixed(0)}`);
       imlog.text(`\tscore: ${player.score}`);
       imlog.text(`\tcollection: ${player.shapes_collected.toString()}`);
@@ -234,7 +248,7 @@ function loop(time: DOMHighResTimeStamp) {
     }
 
     // shapes
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 4;
     ctx.strokeStyle = "red";
     for (const slot of shape_spawner.entity_manager.entity_slot_list) {
       const shape = shape_spawner.entity_manager.entityInSlot(slot);
@@ -307,15 +321,56 @@ function loop(time: DOMHighResTimeStamp) {
     // debug info
     if (input.keyJustDown("KeyP")) imlog.visible = !imlog.visible;
     if (imlog.visible) {
+      let x = 10;
       let y = 10;
-      let gap = 0;
+      let gap = 2;
       for (let log of imlog.list) {
-        let text_metrics = ctx.measureText(log);
-        let x = 10;
-        y += text_metrics.fontBoundingBoxAscent + gap;
-        ctx.fillStyle = `white`;
-        ctx.font = `1em monospace`;
-        ctx.fillText(log, x, y);
+        ctx.beginPath();
+        if (log.kind == "text") {
+          let text_metrics = ctx.measureText(log.text);
+          y += text_metrics.fontBoundingBoxAscent + gap;
+          ctx.fillStyle = `white`;
+          ctx.font = `1em monospace`;
+          ctx.fillText(log.text, x, y);
+        } else if (log.kind == "vec2") {
+          let margin = 10;
+          let size = (log?.size ?? 100) - margin * 2;
+          let w = size - margin;
+          let h = size - margin;
+          let l = x + margin;
+          let t = y + margin;
+          let r = l + w;
+          let b = t + h;
+          let radius = w / 2;
+          let cx = l + radius;
+          let cy = t + radius;
+          ctx.strokeStyle = "rgb(255 255 255 / 0.25)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(cx, t);
+          ctx.lineTo(cx, b);
+          ctx.moveTo(l, cy);
+          ctx.lineTo(r, cy);
+          ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.strokeStyle = "rgb(255 255 255 / 1)";
+          ctx.moveTo(cx, cy);
+          let dir = Vec2.normalize(log.vec);
+          let v = Vec2.mulScalar(dir, radius).add(new Vec2(cx, cy));
+          ctx.lineTo(v.x, v.y);
+          ctx.stroke();
+          y += size + gap;
+          ctx.fillStyle = `white`;
+          ctx.font = `0.75em monospace`;
+          ctx.fillText(`${log.vec.len().toFixed(1)}`, cx, cy);
+          if (log.label) {
+            let text_metrics = ctx.measureText(log.label);
+            // y += text_metrics.fontBoundingBoxAscent + gap;
+            ctx.fillText(`${log.label}`, cx - text_metrics.width, cy + text_metrics.actualBoundingBoxAscent);
+          }
+        }
+        ctx.closePath();
       }
     }
   }

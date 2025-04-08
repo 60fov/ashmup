@@ -57,6 +57,7 @@ export class Vec2 {
   to(v: Vec2) {return Vec2.sub(v, this);}
   from(v: Vec2) {return Vec2.sub(this, v);}
 
+  static copy(v: Vec2) {return new Vec2(v.x, v.y)}
   static mul(a: Vec2, b: Vec2) {return new Vec2(a.x * b.x, a.y * b.y)}
   static add(a: Vec2, b: Vec2) {return new Vec2(a.x + b.x, a.y + b.y)}
   static sub(a: Vec2, b: Vec2) {return new Vec2(a.x - b.x, a.y - b.y)}
